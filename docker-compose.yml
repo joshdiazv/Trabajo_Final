@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./server/movies.csv:/app/movies.csv
+      - ./server/ratings.csv:/app/ratings.csv
+    container_name: server
+    networks:
+      - distributed_network
+
+  proxy:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    container_name: proxy
+    depends_on:
+      - server
+    environment:
+      SERVER_HOST: server  # Conéctate al servicio 'server'
+      SERVER_PORT: 8080
+    networks:
+      - distributed_network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    depends_on:
+      - server
+    container_name: api
+    networks:
+      - distributed_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    container_name: frontend
+    networks:
+      - distributed_network
+
+networks:
+  distributed_network:
+    driver: bridge
